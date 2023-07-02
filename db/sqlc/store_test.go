@@ -33,6 +33,7 @@ func TestPaymentTx(t *testing.T) {
 	}
 
 	// verify results
+	existed := make(map[int]bool)
 	for i := 0; i < n; i++ {
 		err := <-errs
 		require.NoError(t, err)
@@ -72,5 +73,35 @@ func TestPaymentTx(t *testing.T) {
 
 		_, err = store.GetRecord(context.Background(), toRecord.ID)
 		require.NoError(t, err)
+
+		// verify traders
+		fromTrader := result.FromTrader
+		// require.NotEmpty(t, fromTrader)
+		require.Equal(t, trader1.ID, fromTrader.ID)
+
+		toTrader := result.ToTrader
+		// require.NotEmpty(t, toTrader)
+		require.Equal(t, trader2.ID, toTrader.ID)
+
+		diff1 := trader1.Balance - fromTrader.Balance
+		diff2 := toTrader.Balance - trader2.Balance
+		require.Equal(t, diff1, diff2)
+		require.True(t, diff1 > 0)
+		require.True(t, diff1%amount == 0)
+
+		k := int(diff1 / amount)
+		require.True(t, k >= 1 && k <= n)
+		require.NotContains(t, existed, k)
+		existed[k] = true
 	}
+
+	// verify the final updated result
+	updatedTrader1, err := store.GetTrader(context.Background(), trader1.ID)
+	require.NoError(t, err)
+
+	updatedTrader2, err := store.GetTrader(context.Background(), trader2.ID)
+	require.NoError(t, err)
+
+	require.Equal(t, trader1.Balance-int64(n)*amount, updatedTrader1.Balance)
+	require.Equal(t, trader2.Balance+int64(n)*amount, updatedTrader2.Balance)
 }

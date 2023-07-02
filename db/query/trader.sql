@@ -26,3 +26,9 @@ RETURNING *;
 -- name: DeleteTrader :exec
 DELETE FROM traders
 WHERE id = $1;
+
+-- name: AddTraderBalance :one
+UPDATE traders
+SET balance = balance + sqlc.arg(amount)
+WHERE id = sqlc.arg(id)
+RETURNING *;

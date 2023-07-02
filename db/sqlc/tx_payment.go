@@ -3,15 +3,15 @@ package db
 import "context"
 
 type PaymentTxParams struct {
-	FromTraderID int64 `json:"from_account_id"`
-	ToTraderID   int64 `json:"to_account_id"`
+	FromTraderID int64 `json:"from_trader_id"`
+	ToTraderID   int64 `json:"to_trader_id"`
 	Amount       int64 `json:"amount"`
 }
 
 type PaymentTxResult struct {
 	Payment    Payment `json:"payment"`
-	FromTrader Trader  `json:"from_account"`
-	ToTrader   Trader  `json:"to_account"`
+	FromTrader Trader  `json:"from_trader"`
+	ToTrader   Trader  `json:"to_trader"`
 	FromRecord Record  `json:"from_record"`
 	ToRecord   Record  `json:"to_record"`
 }
@@ -47,8 +47,33 @@ func (store *Store) PaymentTx(ctx context.Context, arg PaymentTxParams) (Payment
 			return err
 		}
 
-		return nil
+		if arg.FromTraderID < arg.ToTraderID {
+			result.FromTrader, result.ToTrader, err = transferAmount(ctx, q, arg.FromTraderID, -arg.Amount, arg.ToTraderID, arg.Amount)
+		} else {
+			result.ToTrader, result.FromTrader, err = transferAmount(ctx, q, arg.ToTraderID, arg.Amount, arg.FromTraderID, -arg.Amount)
+		}
+
+		return err
 	})
 
 	return result, err
+}
+
+func transferAmount(ctx context.Context, q *Queries, traderID1 int64, amount1 int64, traderID2 int64, amount2 int64,
+) (trader1 Trader, trader2 Trader, err error) {
+	trader1, err = q.AddTraderBalance(ctx, AddTraderBalanceParams{
+		ID:     traderID1,
+		Amount: amount1,
+	})
+	if err != nil {
+		return
+	}
+	trader2, err = q.AddTraderBalance(ctx, AddTraderBalanceParams{
+		ID:     traderID2,
+		Amount: amount2,
+	})
+	if err != nil {
+		return
+	}
+	return
 }

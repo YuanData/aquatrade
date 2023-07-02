@@ -105,3 +105,49 @@ func TestPaymentTx(t *testing.T) {
 	require.Equal(t, trader1.Balance-int64(n)*amount, updatedTrader1.Balance)
 	require.Equal(t, trader2.Balance+int64(n)*amount, updatedTrader2.Balance)
 }
+
+func TestPaymentTxDeadlock(t *testing.T) {
+	store := NewStore(testDB)
+
+	trader1 := createRandomTrader(t)
+	trader2 := createRandomTrader(t)
+
+	n := 10
+	amount := int64(10)
+	errs := make(chan error)
+
+	for i := 0; i < n; i++ {
+		fromTraderID := trader1.ID
+		toTraderID := trader2.ID
+
+		if i%2 == 1 {
+			fromTraderID = trader2.ID
+			toTraderID = trader1.ID
+		}
+
+		go func() {
+			_, err := store.PaymentTx(context.Background(), PaymentTxParams{
+				FromTraderID: fromTraderID,
+				ToTraderID:   toTraderID,
+				Amount:       amount,
+			})
+
+			errs <- err
+		}()
+	}
+
+	for i := 0; i < n; i++ {
+		err := <-errs
+		require.NoError(t, err)
+	}
+
+	// verify the final updated results
+	updatedTrader1, err := store.GetTrader(context.Background(), trader1.ID)
+	require.NoError(t, err)
+
+	updatedTrader2, err := store.GetTrader(context.Background(), trader2.ID)
+	require.NoError(t, err)
+
+	require.Equal(t, trader1.Balance, updatedTrader1.Balance)
+	require.Equal(t, trader2.Balance, updatedTrader2.Balance)
+}

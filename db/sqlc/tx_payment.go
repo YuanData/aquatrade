@@ -22,11 +22,8 @@ func (store *Store) PaymentTx(ctx context.Context, arg PaymentTxParams) (Payment
 	err := store.execTx(ctx, func(q *Queries) error {
 		var err error
 
-		result.Payment, err = q.CreatePayment(ctx, CreatePaymentParams{
-			FromTraderID: arg.FromTraderID,
-			ToTraderID:   arg.ToTraderID,
-			Amount:       arg.Amount,
-		})
+		createPaymentParams := CreatePaymentParams(arg)
+		result.Payment, err = q.CreatePayment(ctx, createPaymentParams)
 		if err != nil {
 			return err
 		}

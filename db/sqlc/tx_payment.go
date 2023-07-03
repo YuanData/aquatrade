@@ -16,7 +16,7 @@ type PaymentTxResult struct {
 	ToRecord   Record  `json:"to_record"`
 }
 
-func (store *Store) PaymentTx(ctx context.Context, arg PaymentTxParams) (PaymentTxResult, error) {
+func (store *SQLStore) PaymentTx(ctx context.Context, arg PaymentTxParams) (PaymentTxResult, error) {
 	var result PaymentTxResult
 
 	err := store.execTx(ctx, func(q *Queries) error {

@@ -2,9 +2,10 @@ package api
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -40,6 +41,44 @@ func TestGetTraderAPI(t *testing.T) {
 				requireBodyMatchTrader(t, recorder.Body, trader)
 			},
 		},
+		{
+			name:     "NotFound",
+			traderID: trader.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetTrader(gomock.Any(), gomock.Eq(trader.ID)).
+					Times(1).
+					Return(db.Trader{}, sql.ErrNoRows)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusNotFound, recorder.Code)
+			},
+		},
+		{
+			name:     "InternalError",
+			traderID: trader.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetTrader(gomock.Any(), gomock.Eq(trader.ID)).
+					Times(1).
+					Return(db.Trader{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name:     "InvalidID",
+			traderID: 0,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetTrader(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
 	}
 
 	for i := range testCases {
@@ -54,7 +93,7 @@ func TestGetTraderAPI(t *testing.T) {
 			server := NewServer(store)
 			recorder := httptest.NewRecorder()
 
-			url := fmt.Sprintf("/traders/%d", trader.ID)
+			url := fmt.Sprintf("/traders/%d", tc.traderID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
@@ -73,7 +112,7 @@ func randomTrader() db.Trader {
 	}
 }
 func requireBodyMatchTrader(t *testing.T, body *bytes.Buffer, trader db.Trader) {
-	data, err := ioutil.ReadAll(body)
+	data, err := io.ReadAll(body)
 	require.NoError(t, err)
 
 	var gotTrader db.Trader

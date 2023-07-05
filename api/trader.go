@@ -10,7 +10,7 @@ import (
 
 type createTraderRequest struct {
 	Account  string `json:"account" binding:"required"`
-	Currency string `json:"currency" binding:"required,oneof=AUD CAD"`
+	Currency string `json:"currency" binding:"required,currency"`
 }
 
 func (server *Server) createTrader(ctx *gin.Context) {

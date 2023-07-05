@@ -1,6 +1,6 @@
 CREATE TABLE "traders" (
   "id" bigserial PRIMARY KEY,
-  "account" varchar NOT NULL,
+  "holder" varchar NOT NULL,
   "balance" bigint NOT NULL,
   "currency" varchar NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now())
@@ -21,7 +21,7 @@ CREATE TABLE "payments" (
   "created_at" timestamptz NOT NULL DEFAULT (now())
 );
 
-CREATE INDEX ON "traders" ("account");
+CREATE INDEX ON "traders" ("holder");
 
 CREATE INDEX ON "records" ("trader_id");
 

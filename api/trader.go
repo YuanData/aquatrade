@@ -9,7 +9,7 @@ import (
 )
 
 type createTraderRequest struct {
-	Account  string `json:"account" binding:"required"`
+	Holder   string `json:"holder" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 }
 
@@ -21,7 +21,7 @@ func (server *Server) createTrader(ctx *gin.Context) {
 	}
 
 	arg := db.CreateTraderParams{
-		Account:  req.Account,
+		Holder:   req.Holder,
 		Currency: req.Currency,
 		Balance:  0,
 	}

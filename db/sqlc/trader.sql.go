@@ -13,7 +13,7 @@ const addTraderBalance = `-- name: AddTraderBalance :one
 UPDATE traders
 SET balance = balance + $1
 WHERE id = $2
-RETURNING id, account, balance, currency, created_at
+RETURNING id, holder, balance, currency, created_at
 `
 
 type AddTraderBalanceParams struct {
@@ -26,7 +26,7 @@ func (q *Queries) AddTraderBalance(ctx context.Context, arg AddTraderBalancePara
 	var i Trader
 	err := row.Scan(
 		&i.ID,
-		&i.Account,
+		&i.Holder,
 		&i.Balance,
 		&i.Currency,
 		&i.CreatedAt,
@@ -36,26 +36,26 @@ func (q *Queries) AddTraderBalance(ctx context.Context, arg AddTraderBalancePara
 
 const createTrader = `-- name: CreateTrader :one
 INSERT INTO traders (
-  account,
+  holder,
   balance,
   currency
 ) VALUES (
   $1, $2, $3
-) RETURNING id, account, balance, currency, created_at
+) RETURNING id, holder, balance, currency, created_at
 `
 
 type CreateTraderParams struct {
-	Account  string `json:"account"`
+	Holder   string `json:"holder"`
 	Balance  int64  `json:"balance"`
 	Currency string `json:"currency"`
 }
 
 func (q *Queries) CreateTrader(ctx context.Context, arg CreateTraderParams) (Trader, error) {
-	row := q.db.QueryRowContext(ctx, createTrader, arg.Account, arg.Balance, arg.Currency)
+	row := q.db.QueryRowContext(ctx, createTrader, arg.Holder, arg.Balance, arg.Currency)
 	var i Trader
 	err := row.Scan(
 		&i.ID,
-		&i.Account,
+		&i.Holder,
 		&i.Balance,
 		&i.Currency,
 		&i.CreatedAt,
@@ -74,7 +74,7 @@ func (q *Queries) DeleteTrader(ctx context.Context, id int64) error {
 }
 
 const getTrader = `-- name: GetTrader :one
-SELECT id, account, balance, currency, created_at FROM traders
+SELECT id, holder, balance, currency, created_at FROM traders
 WHERE id = $1 LIMIT 1
 `
 
@@ -83,7 +83,7 @@ func (q *Queries) GetTrader(ctx context.Context, id int64) (Trader, error) {
 	var i Trader
 	err := row.Scan(
 		&i.ID,
-		&i.Account,
+		&i.Holder,
 		&i.Balance,
 		&i.Currency,
 		&i.CreatedAt,
@@ -92,7 +92,7 @@ func (q *Queries) GetTrader(ctx context.Context, id int64) (Trader, error) {
 }
 
 const listTraders = `-- name: ListTraders :many
-SELECT id, account, balance, currency, created_at FROM traders
+SELECT id, holder, balance, currency, created_at FROM traders
 ORDER BY id
 LIMIT $1
 OFFSET $2
@@ -114,7 +114,7 @@ func (q *Queries) ListTraders(ctx context.Context, arg ListTradersParams) ([]Tra
 		var i Trader
 		if err := rows.Scan(
 			&i.ID,
-			&i.Account,
+			&i.Holder,
 			&i.Balance,
 			&i.Currency,
 			&i.CreatedAt,
@@ -136,7 +136,7 @@ const updateTrader = `-- name: UpdateTrader :one
 UPDATE traders
 SET balance = $2
 WHERE id = $1
-RETURNING id, account, balance, currency, created_at
+RETURNING id, holder, balance, currency, created_at
 `
 
 type UpdateTraderParams struct {
@@ -149,7 +149,7 @@ func (q *Queries) UpdateTrader(ctx context.Context, arg UpdateTraderParams) (Tra
 	var i Trader
 	err := row.Scan(
 		&i.ID,
-		&i.Account,
+		&i.Holder,
 		&i.Balance,
 		&i.Currency,
 		&i.CreatedAt,

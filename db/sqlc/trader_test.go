@@ -12,7 +12,7 @@ import (
 
 func createRandomTrader(t *testing.T) Trader {
 	arg := CreateTraderParams{
-		Account:  util.RandomAccount(),
+		Holder:   util.RandomHolder(),
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
@@ -21,7 +21,7 @@ func createRandomTrader(t *testing.T) Trader {
 	require.NoError(t, err)
 	require.NotEmpty(t, trader)
 
-	require.Equal(t, arg.Account, trader.Account)
+	require.Equal(t, arg.Holder, trader.Holder)
 	require.Equal(t, arg.Balance, trader.Balance)
 	require.Equal(t, arg.Currency, trader.Currency)
 
@@ -42,7 +42,7 @@ func TestGetTrader(t *testing.T) {
 	require.NotEmpty(t, trader2)
 
 	require.Equal(t, trader1.ID, trader2.ID)
-	require.Equal(t, trader1.Account, trader2.Account)
+	require.Equal(t, trader1.Holder, trader2.Holder)
 	require.Equal(t, trader1.Balance, trader2.Balance)
 	require.Equal(t, trader1.Currency, trader2.Currency)
 	require.WithinDuration(t, trader1.CreatedAt, trader2.CreatedAt, time.Second)
@@ -61,7 +61,7 @@ func TestUpdateTrader(t *testing.T) {
 	require.NotEmpty(t, trader2)
 
 	require.Equal(t, trader1.ID, trader2.ID)
-	require.Equal(t, trader1.Account, trader2.Account)
+	require.Equal(t, trader1.Holder, trader2.Holder)
 	require.Equal(t, arg.Balance, trader2.Balance)
 	require.Equal(t, trader1.Currency, trader2.Currency)
 	require.WithinDuration(t, trader1.CreatedAt, trader2.CreatedAt, time.Second)

@@ -29,7 +29,7 @@ func RandomString(n int) string {
 	return sb.String()
 }
 
-func RandomAccount() string {
+func RandomHolder() string {
 	return RandomString(5)
 }
 

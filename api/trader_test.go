@@ -106,7 +106,7 @@ func TestGetTraderAPI(t *testing.T) {
 func randomTrader() db.Trader {
 	return db.Trader{
 		ID:       util.RandomInt(1, 1000),
-		Account:  util.RandomAccount(),
+		Holder:   util.RandomHolder(),
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}

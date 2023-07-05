@@ -27,7 +27,7 @@ type Record struct {
 
 type Trader struct {
 	ID        int64     `json:"id"`
-	Account   string    `json:"account"`
+	Holder    string    `json:"holder"`
 	Balance   int64     `json:"balance"`
 	Currency  string    `json:"currency"`
 	CreatedAt time.Time `json:"created_at"`

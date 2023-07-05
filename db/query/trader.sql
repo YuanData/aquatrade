@@ -1,6 +1,6 @@
 -- name: CreateTrader :one
 INSERT INTO traders (
-  account,
+  holder,
   balance,
   currency
 ) VALUES (

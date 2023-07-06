@@ -50,6 +50,21 @@ func (mr *MockStoreMockRecorder) AddTraderBalance(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTraderBalance", reflect.TypeOf((*MockStore)(nil).AddTraderBalance), arg0, arg1)
 }
 
+// CreateMember mocks base method.
+func (m *MockStore) CreateMember(arg0 context.Context, arg1 db.CreateMemberParams) (db.Member, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateMember", arg0, arg1)
+	ret0, _ := ret[0].(db.Member)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateMember indicates an expected call of CreateMember.
+func (mr *MockStoreMockRecorder) CreateMember(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateMember", reflect.TypeOf((*MockStore)(nil).CreateMember), arg0, arg1)
+}
+
 // CreatePayment mocks base method.
 func (m *MockStore) CreatePayment(arg0 context.Context, arg1 db.CreatePaymentParams) (db.Payment, error) {
 	m.ctrl.T.Helper()
@@ -107,6 +122,21 @@ func (m *MockStore) DeleteTrader(arg0 context.Context, arg1 int64) error {
 func (mr *MockStoreMockRecorder) DeleteTrader(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTrader", reflect.TypeOf((*MockStore)(nil).DeleteTrader), arg0, arg1)
+}
+
+// GetMember mocks base method.
+func (m *MockStore) GetMember(arg0 context.Context, arg1 string) (db.Member, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMember", arg0, arg1)
+	ret0, _ := ret[0].(db.Member)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMember indicates an expected call of GetMember.
+func (mr *MockStoreMockRecorder) GetMember(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMember", reflect.TypeOf((*MockStore)(nil).GetMember), arg0, arg1)
 }
 
 // GetPayment mocks base method.

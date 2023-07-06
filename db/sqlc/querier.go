@@ -10,10 +10,12 @@ import (
 
 type Querier interface {
 	AddTraderBalance(ctx context.Context, arg AddTraderBalanceParams) (Trader, error)
+	CreateMember(ctx context.Context, arg CreateMemberParams) (Member, error)
 	CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error)
 	CreateRecord(ctx context.Context, arg CreateRecordParams) (Record, error)
 	CreateTrader(ctx context.Context, arg CreateTraderParams) (Trader, error)
 	DeleteTrader(ctx context.Context, id int64) error
+	GetMember(ctx context.Context, membername string) (Member, error)
 	GetPayment(ctx context.Context, id int64) (Payment, error)
 	GetRecord(ctx context.Context, id int64) (Record, error)
 	GetTrader(ctx context.Context, id int64) (Trader, error)

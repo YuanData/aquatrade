@@ -11,8 +11,9 @@ import (
 )
 
 func createRandomTrader(t *testing.T) Trader {
+	member := createRandomMember(t)
 	arg := CreateTraderParams{
-		Holder:   util.RandomHolder(),
+		Holder:   member.Membername,
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}

@@ -16,7 +16,7 @@ type JWTGenerator struct {
 
 func NewJWTGenerator(secretKey string) (Generator, error) {
 	if len(secretKey) < minSecretKeySize {
-		return nil, fmt.Errorf("invalid key size: must be at least %d characters", minSecretKeySize)
+		return nil, fmt.Errorf("invalid key size: must be %d characters", minSecretKeySize)
 	}
 	return &JWTGenerator{secretKey}, nil
 }

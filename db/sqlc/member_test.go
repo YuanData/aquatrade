@@ -10,9 +10,11 @@ import (
 )
 
 func createRandomMember(t *testing.T) Member {
+	hashedPassword, err := util.HashPassword(util.RandomString(8))
+	require.NoError(t, err)
 	arg := CreateMemberParams{
 		Membername:     util.RandomHolder(),
-		HashedPassword: "password",
+		HashedPassword: hashedPassword,
 		FullName:       util.RandomHolder(),
 		Email:          util.RandomEmail(),
 	}

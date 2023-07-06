@@ -1,0 +1,5 @@
+ALTER TABLE IF EXISTS "trader" DROP CONSTRAINT IF EXISTS "holder_currency_key";
+
+ALTER TABLE IF EXISTS "trader" DROP CONSTRAINT IF EXISTS "trader_holder_fkey";
+
+DROP TABLE IF EXISTS "members";

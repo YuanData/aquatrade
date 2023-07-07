@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 	"time"
 
@@ -70,5 +71,53 @@ func (server *Server) createMember(ctx *gin.Context) {
 	}
 
 	rsp := newMemberResponse(member)
+	ctx.JSON(http.StatusOK, rsp)
+}
+
+type loginMemberRequest struct {
+	Membername string `json:"membername" binding:"required,alphanum"`
+	Password   string `json:"password" binding:"required,min=6"`
+}
+
+type loginMemberResponse struct {
+	AccessToken string         `json:"access_token"`
+	Member      memberResponse `json:"member"`
+}
+
+func (server *Server) loginMember(ctx *gin.Context) {
+	var req loginMemberRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	member, err := server.store.GetMember(ctx, req.Membername)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	err = util.VerifyPassword(req.Password, member.HashedPassword)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	accessToken, err := server.tokenGenerator.CreateToken(
+		member.Membername,
+		server.config.AccessTokenDuration,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	rsp := loginMemberResponse{
+		AccessToken: accessToken,
+		Member:      newMemberResponse(member),
+	}
 	ctx.JSON(http.StatusOK, rsp)
 }

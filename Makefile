@@ -1,7 +1,10 @@
 DB_URL=postgresql://root:Aquamarine@localhost:5432/aquatrade?sslmode=disable
 
+network:
+	docker network create trade-network
+
 postgres:
-	docker run --name postgres -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=Aquamarine -d postgres:14-alpine
+	docker run --name postgres --network trade-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=Aquamarine -d postgres:14-alpine
 
 createdb:
 	docker exec -it postgres createdb --username=root --owner=root aquatrade
@@ -36,4 +39,4 @@ server:
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/YuanData/aquatrade/db/sqlc Store
 
-.PHONY: postgres createdb dropdb migrateup migratedown migrateup1 migratedown1 new_migration sqlc test server mock
+.PHONY: postgres network createdb dropdb migrateup migratedown migrateup1 migratedown1 new_migration sqlc test server mock

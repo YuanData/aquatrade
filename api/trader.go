@@ -2,15 +2,16 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 
 	db "github.com/YuanData/aquatrade/db/sqlc"
+	"github.com/YuanData/aquatrade/token"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
 
 type createTraderRequest struct {
-	Holder   string `json:"holder" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 }
 
@@ -20,9 +21,9 @@ func (server *Server) createTrader(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 	arg := db.CreateTraderParams{
-		Holder:   req.Holder,
+		Holder:   authPayload.Membername,
 		Currency: req.Currency,
 		Balance:  0,
 	}
@@ -64,7 +65,12 @@ func (server *Server) getTrader(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	if trader.Holder != authPayload.Membername {
+		err := errors.New("trader doesn't belong to the authenticated member")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
 	ctx.JSON(http.StatusOK, trader)
 }
 
@@ -79,8 +85,9 @@ func (server *Server) listTraders(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 	arg := db.ListTradersParams{
+		Holder: authPayload.Membername,
 		Limit:  req.PageSize,
 		Offset: (req.PageID - 1) * req.PageSize,
 	}

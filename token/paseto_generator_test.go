@@ -9,7 +9,7 @@ import (
 )
 
 func TestPasetoGenerator(t *testing.T) {
-	maker, err := NewPasetoGenerator(util.RandomString(32))
+	generator, err := NewPasetoGenerator(util.RandomString(32))
 	require.NoError(t, err)
 
 	membername := util.RandomHolder()
@@ -18,11 +18,11 @@ func TestPasetoGenerator(t *testing.T) {
 	issuedAt := time.Now()
 	expiredAt := issuedAt.Add(duration)
 
-	token, err := maker.CreateToken(membername, duration)
+	token, payload, err := generator.CreateToken(membername, duration)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
 
-	payload, err := maker.VerifyToken(token)
+	payload, err = generator.VerifyToken(token)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
 
@@ -33,14 +33,15 @@ func TestPasetoGenerator(t *testing.T) {
 }
 
 func TestExpiredPasetoToken(t *testing.T) {
-	maker, err := NewPasetoGenerator(util.RandomString(32))
+	generator, err := NewPasetoGenerator(util.RandomString(32))
 	require.NoError(t, err)
 
-	token, err := maker.CreateToken(util.RandomHolder(), -time.Minute)
+	token, payload, err := generator.CreateToken(util.RandomHolder(), -time.Minute)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
+	require.NotEmpty(t, payload)
 
-	payload, err := maker.VerifyToken(token)
+	payload, err = generator.VerifyToken(token)
 	require.Error(t, err)
 	require.EqualError(t, err, ErrExpiredToken.Error())
 	require.Nil(t, payload)

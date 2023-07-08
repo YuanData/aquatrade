@@ -18,28 +18,28 @@ func NewPasetoGenerator(symmetricKey string) (Generator, error) {
 		return nil, fmt.Errorf("invalid key size: must be %d characters", chacha20poly1305.KeySize)
 	}
 
-	maker := &PasetoGenerator{
+	generator := &PasetoGenerator{
 		paseto:       paseto.NewV2(),
 		symmetricKey: []byte(symmetricKey),
 	}
 
-	return maker, nil
+	return generator, nil
 }
 
-func (maker *PasetoGenerator) CreateToken(membername string, duration time.Duration) (string, error) {
+func (generator *PasetoGenerator) CreateToken(membername string, duration time.Duration) (string, *Payload, error) {
 	payload, err := NewPayload(membername, duration)
 	if err != nil {
-		return "", err
+		return "", payload, err
 	}
 
-	token, err := maker.paseto.Encrypt(maker.symmetricKey, payload, nil)
-	return token, err
+	token, err := generator.paseto.Encrypt(generator.symmetricKey, payload, nil)
+	return token, payload, err
 }
 
-func (maker *PasetoGenerator) VerifyToken(token string) (*Payload, error) {
+func (generator *PasetoGenerator) VerifyToken(token string) (*Payload, error) {
 	payload := &Payload{}
 
-	err := maker.paseto.Decrypt(token, maker.symmetricKey, payload, nil)
+	err := generator.paseto.Decrypt(token, generator.symmetricKey, payload, nil)
 	if err != nil {
 		return nil, ErrInvalidToken
 	}

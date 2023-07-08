@@ -7,6 +7,7 @@ import (
 
 	db "github.com/YuanData/aquatrade/db/sqlc"
 	"github.com/YuanData/aquatrade/util"
+	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
@@ -80,8 +81,12 @@ type loginMemberRequest struct {
 }
 
 type loginMemberResponse struct {
-	AccessToken string         `json:"access_token"`
-	Member      memberResponse `json:"member"`
+	SessionID             uuid.UUID      `json:"session_id"`
+	AccessToken           string         `json:"access_token"`
+	AccessTokenExpiresAt  time.Time      `json:"access_token_expires_at"`
+	RefreshToken          string         `json:"refresh_token"`
+	RefreshTokenExpiresAt time.Time      `json:"refresh_token_expires_at"`
+	Member                memberResponse `json:"member"`
 }
 
 func (server *Server) loginMember(ctx *gin.Context) {
@@ -107,7 +112,7 @@ func (server *Server) loginMember(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := server.tokenGenerator.CreateToken(
+	accessToken, accessPayload, err := server.tokenGenerator.CreateToken(
 		member.Membername,
 		server.config.AccessTokenDuration,
 	)
@@ -115,9 +120,36 @@ func (server *Server) loginMember(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
+	refreshToken, refreshPayload, err := server.tokenGenerator.CreateToken(
+		member.Membername,
+		server.config.RefreshTokenDuration,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	session, err := server.store.CreateSession(ctx, db.CreateSessionParams{
+		ID:           refreshPayload.ID,
+		Membername:   member.Membername,
+		RefreshToken: refreshToken,
+		MemberAgent:  ctx.Request.UserAgent(),
+		ClientIp:     ctx.ClientIP(),
+		IsBlocked:    false,
+		ExpiresAt:    refreshPayload.ExpiredAt,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
 	rsp := loginMemberResponse{
-		AccessToken: accessToken,
-		Member:      newMemberResponse(member),
+		SessionID:             session.ID,
+		AccessToken:           accessToken,
+		AccessTokenExpiresAt:  accessPayload.ExpiredAt,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: refreshPayload.ExpiredAt,
+		Member:                newMemberResponse(member),
 	}
 	ctx.JSON(http.StatusOK, rsp)
 }

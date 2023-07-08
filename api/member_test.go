@@ -55,7 +55,7 @@ func TestCreateMemberAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		body          gin.H
-		buildStubs    func(store *mockdb.MockStore)
+		buildMocks    func(store *mockdb.MockStore)
 		checkResponse func(recoder *httptest.ResponseRecorder)
 	}{
 		{
@@ -66,7 +66,7 @@ func TestCreateMemberAPI(t *testing.T) {
 				"full_name":  member.FullName,
 				"email":      member.Email,
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildMocks: func(store *mockdb.MockStore) {
 				arg := db.CreateMemberParams{
 					Membername: member.Membername,
 					FullName:   member.FullName,
@@ -90,7 +90,7 @@ func TestCreateMemberAPI(t *testing.T) {
 				"full_name":  member.FullName,
 				"email":      member.Email,
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildMocks: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
 					Times(1).
@@ -108,7 +108,7 @@ func TestCreateMemberAPI(t *testing.T) {
 				"full_name":  member.FullName,
 				"email":      member.Email,
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildMocks: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
 					Times(1).
@@ -126,7 +126,7 @@ func TestCreateMemberAPI(t *testing.T) {
 				"full_name":  member.FullName,
 				"email":      member.Email,
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildMocks: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -143,7 +143,7 @@ func TestCreateMemberAPI(t *testing.T) {
 				"full_name":  member.FullName,
 				"email":      "invalid-email",
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildMocks: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -160,7 +160,7 @@ func TestCreateMemberAPI(t *testing.T) {
 				"full_name":  member.FullName,
 				"email":      member.Email,
 			},
-			buildStubs: func(store *mockdb.MockStore) {
+			buildMocks: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -179,7 +179,7 @@ func TestCreateMemberAPI(t *testing.T) {
 			defer ctrl.Finish()
 
 			store := mockdb.NewMockStore(ctrl)
-			tc.buildStubs(store)
+			tc.buildMocks(store)
 
 			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
@@ -189,6 +189,124 @@ func TestCreateMemberAPI(t *testing.T) {
 			require.NoError(t, err)
 
 			url := "/members"
+			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
+			require.NoError(t, err)
+
+			server.router.ServeHTTP(recorder, request)
+			tc.checkResponse(recorder)
+		})
+	}
+}
+func TestLoginMemberAPI(t *testing.T) {
+	member, password := randomMember(t)
+
+	testCases := []struct {
+		name          string
+		body          gin.H
+		buildMocks    func(store *mockdb.MockStore)
+		checkResponse func(recoder *httptest.ResponseRecorder)
+	}{
+		{
+			name: "OK",
+			body: gin.H{
+				"membername": member.Membername,
+				"password":   password,
+			},
+			buildMocks: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMember(gomock.Any(), gomock.Eq(member.Membername)).
+					Times(1).
+					Return(member, nil)
+				store.EXPECT().
+					CreateSession(gomock.Any(), gomock.Any()).
+					Times(1)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, recorder.Code)
+			},
+		},
+		{
+			name: "MemberNotFound",
+			body: gin.H{
+				"membername": "NotFound",
+				"password":   password,
+			},
+			buildMocks: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMember(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.Member{}, sql.ErrNoRows)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusNotFound, recorder.Code)
+			},
+		},
+		{
+			name: "IncorrectPassword",
+			body: gin.H{
+				"membername": member.Membername,
+				"password":   "incorrect",
+			},
+			buildMocks: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMember(gomock.Any(), gomock.Eq(member.Membername)).
+					Times(1).
+					Return(member, nil)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+		{
+			name: "InternalError",
+			body: gin.H{
+				"membername": member.Membername,
+				"password":   password,
+			},
+			buildMocks: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMember(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.Member{}, sql.ErrConnDone)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name: "InvalidMembername",
+			body: gin.H{
+				"membername": "invalid-member#1",
+				"password":   password,
+			},
+			buildMocks: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMember(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
+	}
+
+	for i := range testCases {
+		tc := testCases[i]
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildMocks(store)
+
+			server := newTestServer(t, store)
+			recorder := httptest.NewRecorder()
+
+			data, err := json.Marshal(tc.body)
+			require.NoError(t, err)
+
+			url := "/members/login"
 			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
 			require.NoError(t, err)
 

@@ -4,10 +4,21 @@ package pb;
 
 import "rpc_create_member.proto";
 import "rpc_login_member.proto";
+import "google/api/annotations.proto";
 
 option go_package = "github.com/YuanData/aquatrade/pb";
 
 service AquaTrade {
-    rpc CreateMember (CreateMemberRequest) returns (CreateMemberResponse) {}
-    rpc LoginMember (LoginMemberRequest) returns (LoginMemberResponse) {}
+    rpc CreateMember (CreateMemberRequest) returns (CreateMemberResponse) {
+        option (google.api.http) = {
+            post: "/v1/create_member"
+            body: "*"
+        };
+    }
+    rpc LoginMember (LoginMemberRequest) returns (LoginMemberResponse) {
+        option (google.api.http) = {
+            post: "/v1/login_member"
+            body: "*"
+        };
+    }
 }

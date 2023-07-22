@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createMember = `-- name: CreateMember :one
@@ -53,6 +54,46 @@ WHERE membername = $1 LIMIT 1
 
 func (q *Queries) GetMember(ctx context.Context, membername string) (Member, error) {
 	row := q.db.QueryRowContext(ctx, getMember, membername)
+	var i Member
+	err := row.Scan(
+		&i.Membername,
+		&i.HashedPassword,
+		&i.FullName,
+		&i.Email,
+		&i.PasswordChangedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateMember = `-- name: UpdateMember :one
+UPDATE members
+SET
+  hashed_password = COALESCE($1, hashed_password),
+  password_changed_at = COALESCE($2, password_changed_at),
+  full_name = COALESCE($3, full_name),
+  email = COALESCE($4, email)
+WHERE
+  membername = $5
+RETURNING membername, hashed_password, full_name, email, password_changed_at, created_at
+`
+
+type UpdateMemberParams struct {
+	HashedPassword    sql.NullString `json:"hashed_password"`
+	PasswordChangedAt sql.NullTime   `json:"password_changed_at"`
+	FullName          sql.NullString `json:"full_name"`
+	Email             sql.NullString `json:"email"`
+	Membername        string         `json:"membername"`
+}
+
+func (q *Queries) UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error) {
+	row := q.db.QueryRowContext(ctx, updateMember,
+		arg.HashedPassword,
+		arg.PasswordChangedAt,
+		arg.FullName,
+		arg.Email,
+		arg.Membername,
+	)
 	var i Member
 	err := row.Scan(
 		&i.Membername,

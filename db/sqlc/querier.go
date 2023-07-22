@@ -26,6 +26,7 @@ type Querier interface {
 	ListPayments(ctx context.Context, arg ListPaymentsParams) ([]Payment, error)
 	ListRecords(ctx context.Context, arg ListRecordsParams) ([]Record, error)
 	ListTraders(ctx context.Context, arg ListTradersParams) ([]Trader, error)
+	UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error)
 	UpdateTrader(ctx context.Context, arg UpdateTraderParams) (Trader, error)
 }
 

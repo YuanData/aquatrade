@@ -7,12 +7,18 @@ import (
 	db "github.com/YuanData/aquatrade/db/sqlc"
 	"github.com/YuanData/aquatrade/pb"
 	"github.com/YuanData/aquatrade/util"
+	"github.com/YuanData/aquatrade/vldn"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (server *Server) LoginMember(ctx context.Context, req *pb.LoginMemberRequest) (*pb.LoginMemberResponse, error) {
+	violations := validateLoginMemberRequest(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
 	member, err := server.store.GetMember(ctx, req.GetMembername())
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -42,12 +48,13 @@ func (server *Server) LoginMember(ctx context.Context, req *pb.LoginMemberReques
 		return nil, status.Errorf(codes.Internal, "failed to create refresh token")
 	}
 
+	mtdt := server.extractMetadata(ctx)
 	session, err := server.store.CreateSession(ctx, db.CreateSessionParams{
 		ID:           refreshPayload.ID,
 		Membername:   member.Membername,
 		RefreshToken: refreshToken,
-		MemberAgent:  "",
-		ClientIp:     "",
+		MemberAgent:  mtdt.UserAgent,
+		ClientIp:     mtdt.ClientIP,
 		IsBlocked:    false,
 		ExpiresAt:    refreshPayload.ExpiredAt,
 	})
@@ -64,4 +71,16 @@ func (server *Server) LoginMember(ctx context.Context, req *pb.LoginMemberReques
 		RefreshTokenExpiresAt: timestamppb.New(refreshPayload.ExpiredAt),
 	}
 	return rsp, nil
+}
+
+func validateLoginMemberRequest(req *pb.LoginMemberRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+	if err := vldn.ValidateMembername(req.GetMembername()); err != nil {
+		violations = append(violations, fieldViolation("membername", err))
+	}
+
+	if err := vldn.ValidatePassword(req.GetPassword()); err != nil {
+		violations = append(violations, fieldViolation("password", err))
+	}
+
+	return violations
 }
